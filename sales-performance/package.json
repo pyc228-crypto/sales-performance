@@ -1,0 +1,9 @@
+{
+  "name": "sales-performance-server",
+  "version": "1.0.0",
+  "description": "영업실적 AI 분석 서버",
+  "private": true,
+  "engines": {
+    "node": "18.x"
+  }
+}

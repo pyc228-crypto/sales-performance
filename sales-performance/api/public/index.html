@@ -1,0 +1,1015 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>영업실적 관리</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.0/chart.umd.min.js"></script>
+<style>
+:root{
+  --bg:#0D1422;--panel:#162236;--panel2:#1A2B3C;--panel3:#0f1d2e;
+  --border:rgba(255,255,255,0.07);--border2:rgba(255,255,255,0.13);
+  --gold:#F9A825;--gold2:#FFD54F;
+  --blue:#1565C0;--blue2:#42A5F5;--blue3:#1976D2;
+  --green:#2E7D32;--green2:#66BB6A;
+  --red:#C62828;--red2:#EF9A9A;
+  --text:#ECEFF1;--text2:#90A4AE;--text3:#546E7A;
+  --r:12px;--rs:8px;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+html,body{height:100%;background:var(--bg);color:var(--text);font-family:'Noto Sans KR',-apple-system,sans-serif}
+.app{display:flex;height:100vh;overflow:hidden}
+.sidebar{width:220px;min-width:220px;background:var(--panel3);border-right:1px solid var(--border);display:flex;flex-direction:column}
+.content{flex:1;overflow-y:auto}
+.logo{padding:20px 16px 16px;border-bottom:1px solid var(--border)}
+.logo-icon{width:32px;height:32px;background:var(--gold);border-radius:var(--rs);display:flex;align-items:center;justify-content:center;font-size:16px;margin-bottom:10px}
+.logo h1{font-size:13px;font-weight:700}
+.logo p{font-size:10px;color:var(--text3);margin-top:2px}
+.nav{padding:12px 8px;flex:1}
+.nav-item{display:flex;align-items:center;gap:10px;padding:9px 10px;border-radius:var(--rs);cursor:pointer;font-size:12px;font-weight:600;color:var(--text2);margin-bottom:2px;transition:.15s;border:none;background:none;width:100%;text-align:left}
+.nav-item:hover{background:var(--panel2);color:var(--text)}
+.nav-item.active{background:rgba(249,168,37,0.12);color:var(--gold)}
+.nav-icon{font-size:15px;width:18px;text-align:center}
+.sidebar-footer{padding:12px 8px;border-top:1px solid var(--border)}
+.ym-sel{flex:1;background:var(--panel2);border:1px solid var(--border2);border-radius:var(--rs);color:var(--text);font-size:11px;padding:6px 8px;outline:none;cursor:pointer}
+.page-header{padding:20px 24px 16px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between}
+.page-title{font-size:16px;font-weight:700}
+.page-sub{font-size:11px;color:var(--text3);margin-top:2px}
+.header-actions{display:flex;gap:8px}
+.btn{padding:8px 14px;border-radius:var(--rs);font-size:12px;font-weight:600;cursor:pointer;border:none;transition:.15s}
+.btn-ghost{background:transparent;border:1px solid var(--border2);color:var(--text2)}
+.btn-ghost:hover{background:var(--panel2);color:var(--text)}
+.btn-blue{background:var(--blue);color:#fff}
+.btn-blue:hover{background:var(--blue3)}
+.page{display:none;padding:20px 24px}
+.page.active{display:block}
+.kpi-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:12px;margin-bottom:20px}
+.kpi-card{background:var(--panel);border:1px solid var(--border);border-radius:var(--r);padding:16px}
+.kpi-label{font-size:10px;font-weight:700;color:var(--text3);letter-spacing:.06em;text-transform:uppercase;margin-bottom:8px}
+.kpi-value{font-size:20px;font-weight:700;font-variant-numeric:tabular-nums}
+.kpi-value.gold{color:var(--gold)}
+.kpi-value.blue{color:var(--blue2)}
+.kpi-value.green{color:var(--green2)}
+.kpi-sub{font-size:10px;color:var(--text3);margin-top:4px}
+.kpi-bar{height:3px;border-radius:2px;background:var(--panel2);margin-top:10px;overflow:hidden}
+.kpi-bar-fill{height:100%;border-radius:2px;transition:.3s}
+.section{background:var(--panel);border:1px solid var(--border);border-radius:var(--r);margin-bottom:16px;overflow:hidden}
+.section-hdr{padding:14px 16px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between}
+.section-hdr h3{font-size:13px;font-weight:700}
+.section-body{padding:16px}
+.tbl{width:100%;border-collapse:collapse;font-size:12px}
+.tbl th{background:var(--panel3);color:var(--text3);font-size:10px;font-weight:700;padding:8px 10px;text-align:left;border-bottom:1px solid var(--border);letter-spacing:.05em;text-transform:uppercase}
+.tbl td{padding:9px 10px;border-bottom:1px solid var(--border);vertical-align:middle}
+.tbl tr:last-child td{border-bottom:none}
+.tbl tr:hover td{background:rgba(255,255,255,0.02)}
+.team-tag{display:inline-block;font-size:10px;font-weight:700;padding:2px 8px;border-radius:4px}
+.t1{background:rgba(21,101,192,.2);color:#90CAF9}
+.t2{background:rgba(46,125,50,.2);color:#A5D6A7}
+.rank-num{font-weight:700;font-size:13px}
+.r1{color:#FFD700}.r2{color:#C0C0C0}.r3{color:#CD7F32}
+.num-cell{text-align:right;font-variant-numeric:tabular-nums;font-weight:600}
+.gold-num{color:var(--gold)}
+.progress{height:4px;border-radius:2px;background:var(--panel2);overflow:hidden;width:70px;display:inline-block;vertical-align:middle;margin-left:6px}
+.progress-fill{height:100%;border-radius:2px}
+.two-col{display:grid;grid-template-columns:1fr 1fr;gap:16px}
+.chart-wrap{position:relative;height:260px}
+.upload-area{border:2px dashed var(--border2);border-radius:var(--r);padding:36px 20px;text-align:center;cursor:pointer;transition:.2s;position:relative}
+.upload-area:hover,.upload-area.drag{border-color:var(--gold);background:rgba(249,168,37,.04)}
+.upload-area input{position:absolute;inset:0;opacity:0;cursor:pointer;width:100%;height:100%}
+.upload-icon{font-size:44px;margin-bottom:10px}
+.upload-title{font-size:14px;font-weight:700;margin-bottom:6px}
+.upload-desc{font-size:12px;color:var(--text2)}
+.preview-img{width:100%;max-height:280px;object-fit:contain;background:var(--panel3);border-radius:var(--rs);display:block}
+.date-row{display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px;margin-bottom:16px}
+.field{display:flex;flex-direction:column;gap:4px}
+.field label{font-size:10px;color:var(--text3);font-weight:700;letter-spacing:.05em;text-transform:uppercase}
+.field select,.field input{background:var(--panel2);border:1px solid var(--border2);border-radius:var(--rs);color:var(--text);font-size:13px;padding:9px 12px;outline:none;transition:.15s}
+.field select:focus,.field input:focus{border-color:var(--gold)}
+.analyze-btn{width:100%;padding:14px;background:var(--gold);color:#000;font-size:14px;font-weight:700;border:none;border-radius:var(--r);cursor:pointer;transition:.15s;display:flex;align-items:center;justify-content:center;gap:8px}
+.analyze-btn:hover{background:var(--gold2)}
+.analyze-btn:disabled{background:var(--text3);color:var(--panel);cursor:not-allowed}
+.spin{width:18px;height:18px;border:2px solid rgba(0,0,0,.2);border-top-color:#000;border-radius:50%;animation:spin .7s linear infinite;display:none}
+@keyframes spin{to{transform:rotate(360deg)}}
+.edit-num{background:var(--panel2);border:1px solid var(--border);border-radius:4px;color:var(--text);font-size:12px;padding:4px 8px;width:110px;text-align:right;font-variant-numeric:tabular-nums;outline:none}
+.edit-num:focus{border-color:var(--gold)}
+.action-row{display:flex;gap:10px;padding:14px 16px;border-top:1px solid var(--border)}
+.save-btn{flex:2;padding:11px;background:var(--blue);color:#fff;font-size:13px;font-weight:700;border:none;border-radius:var(--rs);cursor:pointer}
+.save-btn:hover{background:var(--blue3)}
+.cancel-btn{flex:1;padding:11px;background:transparent;color:var(--text2);font-size:13px;font-weight:600;border:1px solid var(--border2);border-radius:var(--rs);cursor:pointer}
+.cancel-btn:hover{background:var(--panel2);color:var(--text)}
+.badge{font-size:10px;font-weight:700;background:rgba(249,168,37,.15);color:var(--gold);padding:3px 10px;border-radius:20px}
+.toast{position:fixed;bottom:24px;left:50%;transform:translateX(-50%) translateY(80px);background:var(--panel);border:1px solid var(--border2);border-radius:var(--r);padding:11px 20px;font-size:13px;font-weight:600;z-index:9999;transition:.3s;white-space:nowrap;pointer-events:none}
+.toast.show{transform:translateX(-50%) translateY(0)}
+.toast.ok{border-color:rgba(46,125,50,.5);color:var(--green2)}
+.toast.err{border-color:rgba(198,40,40,.5);color:var(--red2)}
+
+/* API 키 모달 */
+.modal-bg{position:fixed;inset:0;background:rgba(0,0,0,.7);z-index:9999;display:flex;align-items:center;justify-content:center}
+.modal{background:var(--panel);border:1px solid var(--border2);border-radius:var(--r);padding:28px;width:420px;max-width:90vw}
+.modal h2{font-size:16px;font-weight:700;margin-bottom:6px}
+.modal p{font-size:12px;color:var(--text2);margin-bottom:20px;line-height:1.7}
+.modal input{width:100%;background:var(--panel2);border:1px solid var(--border2);border-radius:var(--rs);color:var(--text);font-size:13px;padding:11px 14px;outline:none;margin-bottom:12px;font-family:monospace}
+.modal input:focus{border-color:var(--gold)}
+.modal-btns{display:flex;gap:10px}
+.modal-confirm{flex:1;padding:11px;background:var(--gold);color:#000;font-size:13px;font-weight:700;border:none;border-radius:var(--rs);cursor:pointer}
+.modal-link{font-size:11px;color:var(--blue2);cursor:pointer;text-decoration:underline}
+.api-status{display:flex;align-items:center;gap:6px;font-size:11px;padding:6px 10px;border-radius:var(--rs);margin-top:8px}
+.api-status.ok{background:rgba(46,125,50,.1);color:var(--green2)}
+.api-status.none{background:rgba(198,40,40,.1);color:var(--red2)}
+
+@media(max-width:768px){
+  .sidebar{display:none}
+  .two-col{grid-template-columns:1fr}
+  .date-row{grid-template-columns:1fr 1fr}
+  .kpi-grid{grid-template-columns:1fr 1fr}
+}
+</style>
+</head>
+<body>
+
+<!-- API 키 모달 -->
+<div class="modal-bg" id="api-modal" style="display:none">
+  <div class="modal">
+    <h2>🔑 API 키 설정</h2>
+    <p>AI 이미지 인식 기능을 사용하려면 Anthropic API 키가 필요합니다.<br>
+    API 키는 이 기기에만 저장되며 외부로 전송되지 않습니다.</p>
+    <input type="password" id="api-key-input" placeholder="sk-ant-api03-..." autocomplete="off">
+    <div style="margin-bottom:16px">
+      <span class="modal-link" onclick="window.open('https://console.anthropic.com/settings/keys')">
+        → API 키 발급받기 (console.anthropic.com)
+      </span>
+    </div>
+    <div class="modal-btns">
+      <button class="cancel-btn" style="flex:1" onclick="closeApiModal()">나중에</button>
+      <button class="modal-confirm" onclick="saveApiKey()">저장하고 시작</button>
+    </div>
+  </div>
+</div>
+
+<div class="app">
+<!-- 사이드바 -->
+<div class="sidebar">
+  <div class="logo">
+    <div class="logo-icon">📊</div>
+    <h1>영업실적 관리</h1>
+    <p>2026년 영업팀 성과 시스템</p>
+  </div>
+  <nav class="nav">
+    <button class="nav-item active" onclick="go('dashboard')"><span class="nav-icon">📈</span>대시보드</button>
+    <button class="nav-item" onclick="go('input')"><span class="nav-icon">📷</span>실적 입력</button>
+    <button class="nav-item" onclick="go('rank')"><span class="nav-icon">🏆</span>개인 순위</button>
+    <button class="nav-item" onclick="go('cumul')"><span class="nav-icon">📊</span>연간 누적</button>
+    <button class="nav-item" onclick="go('history')"><span class="nav-icon">📋</span>입력 이력</button>
+  </nav>
+  <div class="sidebar-footer">
+    <div style="font-size:10px;color:var(--text3);margin-bottom:6px;font-weight:700;letter-spacing:.05em">조회 기간</div>
+    <div style="display:flex;gap:6px;margin-bottom:10px">
+      <select class="ym-sel" id="sel-year" onchange="refresh()">
+        <option value="2026">2026</option><option value="2027">2027</option>
+      </select>
+      <select class="ym-sel" id="sel-month" onchange="refresh()">
+        <option value="0">전체</option>
+        <option value="1">1월</option><option value="2">2월</option><option value="3">3월</option>
+        <option value="4">4월</option><option value="5" selected>5월</option><option value="6">6월</option>
+        <option value="7">7월</option><option value="8">8월</option><option value="9">9월</option>
+        <option value="10">10월</option><option value="11">11월</option><option value="12">12월</option>
+      </select>
+    </div>
+    <div id="api-status-bar" class="api-status none" onclick="showApiModal()" style="cursor:pointer">
+      <span id="api-status-txt">🔑 API 키 미설정 (클릭)</span>
+    </div>
+  </div>
+</div>
+
+<!-- 메인 -->
+<div class="content">
+
+  <!-- 대시보드 -->
+  <div id="page-dashboard" class="page active">
+    <div class="page-header">
+      <div><div class="page-title" id="dash-title">2026년 5월 대시보드</div><div class="page-sub" id="dash-sub"></div></div>
+      <div class="header-actions"><button class="btn btn-ghost" onclick="go('input')">📷 실적 입력</button></div>
+    </div>
+    <div style="padding:20px 24px">
+      <div class="kpi-grid" id="kpi-grid"></div>
+      <div class="two-col">
+        <div class="section">
+          <div class="section-hdr"><h3>팀별 매출 비교</h3></div>
+          <div class="section-body"><div class="chart-wrap"><canvas id="team-chart"></canvas></div></div>
+        </div>
+        <div class="section">
+          <div class="section-hdr"><h3>Top 5 영업자</h3></div>
+          <div style="overflow-x:auto">
+            <table class="tbl"><thead><tr><th>순위</th><th>영업자</th><th>팀</th><th style="text-align:right">매출</th></tr></thead>
+            <tbody id="top5-body"></tbody></table>
+          </div>
+        </div>
+      </div>
+      <div class="section">
+        <div class="section-hdr"><h3>일별 매출 현황</h3></div>
+        <div style="overflow-x:auto">
+          <table class="tbl"><thead><tr><th>날짜</th><th style="text-align:right">전체</th><th style="text-align:right">1팀</th><th style="text-align:right">2팀</th><th style="text-align:right">접수건</th></tr></thead>
+          <tbody id="daily-body"></tbody></table>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 실적 입력 -->
+  <div id="page-input" class="page">
+    <div class="page-header">
+      <div><div class="page-title">실적 입력</div><div class="page-sub" id="input-sub">날짜를 선택하고 실적을 입력하세요</div></div>
+    </div>
+    <div style="padding:20px 24px">
+
+      <!-- 날짜 + 입력 모드 탭 -->
+      <div class="section">
+        <div class="section-hdr"><h3>날짜 선택</h3></div>
+        <div class="section-body">
+          <div class="date-row">
+            <div class="field"><label>년도</label>
+              <select id="in-year"><option value="2026">2026</option><option value="2027">2027</option></select>
+            </div>
+            <div class="field"><label>월</label>
+              <select id="in-month" onchange="updateDays()">
+                <option value="1">1월</option><option value="2">2월</option><option value="3">3월</option>
+                <option value="4">4월</option><option value="5" selected>5월</option><option value="6">6월</option>
+                <option value="7">7월</option><option value="8">8월</option><option value="9">9월</option>
+                <option value="10">10월</option><option value="11">11월</option><option value="12">12월</option>
+              </select>
+            </div>
+            <div class="field"><label>일</label><select id="in-day"></select></div>
+          </div>
+          <!-- 입력 모드 탭 -->
+          <div style="display:flex;gap:8px;background:var(--panel3);border-radius:var(--rs);padding:4px">
+            <button id="tab-manual" onclick="switchInputTab('manual')"
+              style="flex:1;padding:9px;border:none;border-radius:6px;font-size:12px;font-weight:700;cursor:pointer;background:var(--gold);color:#000;transition:.15s">
+              ✏️ 직접 입력
+            </button>
+            <button id="tab-ai" onclick="switchInputTab('ai')"
+              style="flex:1;padding:9px;border:none;border-radius:6px;font-size:12px;font-weight:700;cursor:pointer;background:transparent;color:var(--text2);transition:.15s">
+              🤖 AI 인식 (API 키 필요)
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <!-- 수동 입력 영역 -->
+      <div id="manual-area">
+        <div class="section">
+          <div class="section-hdr">
+            <h3>수동 입력</h3>
+            <span class="badge" id="manual-date-lbl"></span>
+          </div>
+          <div style="overflow-x:auto">
+            <table class="tbl" id="manual-table" style="table-layout:fixed;width:100%">
+              <colgroup>
+                <col style="width:55px">
+                <col style="width:110px">
+                <col style="width:auto">
+                <col style="width:90px">
+                <col style="width:90px">
+                <col style="width:90px">
+              </colgroup>
+              <thead>
+                <tr>
+                  <th>팀</th>
+                  <th>영업자</th>
+                  <th style="text-align:center">매출금액</th>
+                  <th style="text-align:center">유선</th>
+                  <th style="text-align:center">무선</th>
+                  <th style="text-align:center">렌탈</th>
+                </tr>
+              </thead>
+              <tbody id="manual-tbody"></tbody>
+            </table>
+          </div>
+          <div class="action-row">
+            <button class="cancel-btn" onclick="resetManual()">↩ 초기화</button>
+            <button class="save-btn" onclick="saveManual()">💾 저장하기</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- AI 입력 영역 -->
+      <div id="ai-area" style="display:none">
+        <div class="section">
+          <div class="section-hdr"><h3>이미지 업로드</h3></div>
+          <div class="section-body">
+            <div id="preview-area" style="display:none;margin-bottom:12px">
+              <img id="preview-img" class="preview-img" alt="미리보기">
+              <button class="btn btn-ghost" style="margin-top:8px;width:100%" onclick="resetUpload()">✕ 이미지 제거</button>
+            </div>
+            <div class="upload-area" id="upload-area">
+              <input type="file" id="file-input" accept="image/*" onchange="handleFile(this.files[0])">
+              <div class="upload-icon">📸</div>
+              <div class="upload-title">이미지를 드래그하거나 클릭해서 업로드</div>
+              <div class="upload-desc">PNG · JPG · 엑셀 캡처 · 모바일 사진 모두 지원</div>
+            </div>
+            <div style="height:12px"></div>
+            <button class="analyze-btn" id="analyze-btn" onclick="analyze()" disabled>
+              <div class="spin" id="analyze-spin"></div>
+              <span id="analyze-txt">🤖 AI로 데이터 자동 인식</span>
+            </button>
+          </div>
+        </div>
+        <div id="result-area" style="display:none">
+          <div class="section">
+            <div class="section-hdr">
+              <h3>인식 결과 <span id="result-date-lbl" style="color:var(--gold);margin-left:8px;font-size:11px"></span></h3>
+              <span class="badge" id="result-cnt"></span>
+            </div>
+            <div style="overflow-x:auto">
+              <table class="tbl"><thead><tr><th>팀</th><th>영업자</th><th style="text-align:right">매출금액</th><th style="text-align:right">유선</th><th style="text-align:right">무선</th><th style="text-align:right">렌탈</th></tr></thead>
+              <tbody id="result-tbody"></tbody></table>
+            </div>
+            <div class="action-row">
+              <button class="cancel-btn" onclick="resetUpload()">↩ 다시 입력</button>
+              <button class="save-btn" onclick="saveData()">💾 저장하기</button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- 순위 -->
+  <div id="page-rank" class="page">
+    <div class="page-header">
+      <div><div class="page-title">개인 순위</div><div class="page-sub" id="rank-sub"></div></div>
+    </div>
+    <div style="padding:20px 24px">
+      <div class="section">
+        <div class="section-hdr"><h3>영업자별 실적 랭킹</h3></div>
+        <div style="overflow-x:auto">
+          <table class="tbl"><thead><tr><th>순위</th><th>팀</th><th>영업자</th><th style="text-align:right">매출합계</th><th style="text-align:right">접수건</th><th style="text-align:right">건당평균</th><th>달성률</th></tr></thead>
+          <tbody id="rank-body"></tbody></table>
+        </div>
+      </div>
+      <div class="section">
+        <div class="section-hdr"><h3>영업자별 누적 매출</h3></div>
+        <div class="section-body"><div class="chart-wrap" style="height:300px"><canvas id="rank-chart"></canvas></div></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 연간 누적 -->
+  <div id="page-cumul" class="page">
+    <div class="page-header">
+      <div>
+        <div class="page-title" id="cumul-title">2026년 연간 누적 매출</div>
+        <div class="page-sub" id="cumul-sub"></div>
+      </div>
+    </div>
+    <div style="padding:20px 24px">
+
+      <!-- 연간 KPI -->
+      <div class="kpi-grid" id="cumul-kpi"></div>
+
+      <!-- 월별 매출 현황 -->
+      <div class="section">
+        <div class="section-hdr"><h3>월별 매출 현황</h3></div>
+        <div style="overflow-x:auto">
+          <table class="tbl">
+            <thead>
+              <tr>
+                <th>월</th>
+                <th style="text-align:right">전체</th>
+                <th style="text-align:right">1팀</th>
+                <th style="text-align:right">2팀</th>
+                <th style="text-align:right">접수건</th>
+                <th style="text-align:right">누적합계</th>
+              </tr>
+            </thead>
+            <tbody id="cumul-monthly-body"></tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- 개인별 연간 누적 랭킹 -->
+      <div class="section">
+        <div class="section-hdr"><h3>개인별 연간 누적 랭킹</h3></div>
+        <div style="overflow-x:auto">
+          <table class="tbl">
+            <thead>
+              <tr>
+                <th>순위</th><th>팀</th><th>영업자</th>
+                <th style="text-align:right">연간 누적</th>
+                <th style="text-align:right">월 평균</th>
+                <th style="text-align:right">접수건</th>
+                <th style="text-align:right">건당 평균</th>
+                <th>연간 달성률</th>
+              </tr>
+            </thead>
+            <tbody id="cumul-rank-body"></tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- 팀별 월별 비교 차트 -->
+      <div class="two-col">
+        <div class="section">
+          <div class="section-hdr"><h3>월별 팀 매출 추이</h3></div>
+          <div class="section-body"><div class="chart-wrap" style="height:240px"><canvas id="cumul-monthly-chart"></canvas></div></div>
+        </div>
+        <div class="section">
+          <div class="section-hdr"><h3>영업자별 연간 누적</h3></div>
+          <div class="section-body"><div class="chart-wrap" style="height:240px"><canvas id="cumul-person-chart"></canvas></div></div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- 이력 -->
+  <div id="page-history" class="page">
+    <div class="page-header">
+      <div><div class="page-title">입력 이력</div><div class="page-sub">최근 저장된 실적 목록</div></div>
+      <div class="header-actions">
+        <button class="btn btn-ghost" onclick="if(confirm('전체 삭제하시겠습니까?'))clearAll()">🗑 전체 삭제</button>
+      </div>
+    </div>
+    <div style="padding:20px 24px">
+      <div class="section">
+        <div style="overflow-x:auto">
+          <table class="tbl"><thead><tr><th>날짜</th><th>팀</th><th>영업자</th><th style="text-align:right">매출금액</th><th style="text-align:right">유선</th><th style="text-align:right">무선</th><th style="text-align:right">렌탈</th><th></th></tr></thead>
+          <tbody id="history-body"></tbody></table>
+        </div>
+      </div>
+    </div>
+  </div>
+
+</div>
+</div>
+<div class="toast" id="toast"></div>
+
+<script>
+const MEMBERS={"김시원 과장":"1팀","현보영 주임":"1팀","임제엽 주임":"1팀","박광윤 주임":"1팀","이민철 사원":"1팀","양지애 과장":"2팀","최성훈 사원":"2팀","이경구 사원":"2팀","이건호 사원":"2팀"};
+const GOAL=3000000;
+let b64=null,fileType=null,parsed=[];
+let charts={};
+
+const fmt=n=>Math.round(n).toLocaleString('ko-KR');
+const getData=()=>JSON.parse(localStorage.getItem('salesData')||'[]');
+const setData=d=>localStorage.setItem('salesData',JSON.stringify(d));
+const getKey=()=>localStorage.getItem('anthropicKey')||'';
+
+function filtered(){
+  const y=+document.getElementById('sel-year').value;
+  const m=+document.getElementById('sel-month').value;
+  return getData().filter(r=>r.year===y&&(m===0||r.month===m));
+}
+
+/* ── API 키 모달 ── */
+function showApiModal(){
+  document.getElementById('api-modal').style.display='flex';
+  const k=getKey();
+  if(k) document.getElementById('api-key-input').value=k;
+}
+function closeApiModal(){document.getElementById('api-modal').style.display='none'}
+function saveApiKey(){
+  const k=document.getElementById('api-key-input').value.trim();
+  if(!k||!k.startsWith('sk-')){toast('올바른 API 키를 입력하세요 (sk-ant-... 형식)','err');return}
+  localStorage.setItem('anthropicKey',k);
+  closeApiModal();
+  updateApiStatus();
+  toast('API 키가 저장됐습니다','ok');
+}
+function updateApiStatus(){
+  const k=getKey();
+  const bar=document.getElementById('api-status-bar');
+  const txt=document.getElementById('api-status-txt');
+  if(k){bar.className='api-status ok';txt.textContent='✅ API 키 설정됨';}
+  else{bar.className='api-status none';txt.textContent='🔑 API 키 미설정 (클릭)';}
+}
+
+/* ── 네비게이션 ── */
+function go(page){
+  document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));
+  document.querySelectorAll('.nav-item').forEach(n=>n.classList.remove('active'));
+  document.getElementById('page-'+page).classList.add('active');
+  const idx={dashboard:0,input:1,rank:2,cumul:3,history:4}[page]||0;
+  document.querySelectorAll('.nav-item')[idx].classList.add('active');
+  if(page==='dashboard')renderDash();
+  if(page==='rank')renderRank();
+  if(page==='history')renderHistory();
+  if(page==='input')renderManualTable();
+  if(page==='cumul')renderCumul();
+}
+function refresh(){const p=document.querySelector('.page.active');if(p)go(p.id.replace('page-',''));}
+
+/* ── 연간 누적 ── */
+function renderCumul(){
+  const y=+document.getElementById('sel-year').value;
+  const allData=getData().filter(r=>r.year===y);
+  document.getElementById('cumul-title').textContent=`${y}년 연간 누적 매출`;
+  document.getElementById('cumul-sub').textContent=`1월~12월 전체 현황`;
+
+  // 전체 집계
+  const totalAmt=allData.reduce((s,r)=>s+(r.amount||0),0);
+  const t1Amt=allData.filter(r=>r.team==='1팀').reduce((s,r)=>s+(r.amount||0),0);
+  const t2Amt=allData.filter(r=>r.team==='2팀').reduce((s,r)=>s+(r.amount||0),0);
+  const totalCnt=allData.reduce((s,r)=>s+(r.yusun||0)+(r.musun||0)+(r.rental||0),0);
+  // 입력된 월 수
+  const months=[...new Set(allData.map(r=>r.month))].length||1;
+
+  document.getElementById('cumul-kpi').innerHTML=`
+    <div class="kpi-card"><div class="kpi-label">연간 총 매출</div><div class="kpi-value gold">${fmt(totalAmt)}원</div><div class="kpi-sub">월평균 ${fmt(Math.round(totalAmt/months))}원</div></div>
+    <div class="kpi-card"><div class="kpi-label">1팀 누적</div><div class="kpi-value blue">${fmt(t1Amt)}원</div><div class="kpi-bar"><div class="kpi-bar-fill" style="width:${totalAmt?t1Amt/totalAmt*100:0}%;background:var(--blue2)"></div></div></div>
+    <div class="kpi-card"><div class="kpi-label">2팀 누적</div><div class="kpi-value green">${fmt(t2Amt)}원</div><div class="kpi-bar"><div class="kpi-bar-fill" style="width:${totalAmt?t2Amt/totalAmt*100:0}%;background:var(--green2)"></div></div></div>
+    <div class="kpi-card"><div class="kpi-label">연간 접수건</div><div class="kpi-value">${totalCnt}건</div><div class="kpi-sub">입력 월수 ${months}개월</div></div>`;
+
+  // 월별 집계
+  const byMonth={};
+  for(let m=1;m<=12;m++) byMonth[m]={total:0,t1:0,t2:0,cnt:0};
+  allData.forEach(r=>{
+    byMonth[r.month].total+=r.amount||0;
+    if(r.team==='1팀') byMonth[r.month].t1+=r.amount||0;
+    else byMonth[r.month].t2+=r.amount||0;
+    byMonth[r.month].cnt+=(r.yusun||0)+(r.musun||0)+(r.rental||0);
+  });
+
+  let running=0;
+  const MONTH_LABELS=['1월','2월','3월','4월','5월','6월','7월','8월','9월','10월','11월','12월'];
+  document.getElementById('cumul-monthly-body').innerHTML=MONTH_LABELS.map((lbl,i)=>{
+    const m=i+1;
+    const d=byMonth[m];
+    running+=d.total;
+    const hasData=d.total>0||d.cnt>0;
+    return`<tr style="${!hasData?'opacity:.4':''}">
+      <td style="font-weight:700;color:${hasData?'var(--gold)':'var(--text3)'}">${lbl}</td>
+      <td class="num-cell gold-num">${hasData?fmt(d.total):'-'}</td>
+      <td class="num-cell" style="color:var(--blue2)">${hasData?fmt(d.t1):'-'}</td>
+      <td class="num-cell" style="color:var(--green2)">${hasData?fmt(d.t2):'-'}</td>
+      <td class="num-cell">${hasData?d.cnt+'건':'-'}</td>
+      <td class="num-cell" style="font-weight:700;color:var(--gold)">${running>0?fmt(running):'-'}</td>
+    </tr>`;
+  }).join('')
+  +`<tr style="border-top:2px solid var(--border2)">
+      <td style="font-weight:700;color:var(--gold)">합계</td>
+      <td class="num-cell gold-num" style="font-weight:700">${fmt(totalAmt)}</td>
+      <td class="num-cell" style="color:var(--blue2);font-weight:700">${fmt(t1Amt)}</td>
+      <td class="num-cell" style="color:var(--green2);font-weight:700">${fmt(t2Amt)}</td>
+      <td class="num-cell" style="font-weight:700">${totalCnt}건</td>
+      <td class="num-cell" style="font-weight:700;color:var(--gold)">${fmt(totalAmt)}</td>
+    </tr>`;
+
+  // 개인별 연간 누적
+  const byP={};
+  allData.forEach(r=>{
+    if(!byP[r.name]) byP[r.name]={name:r.name,team:r.team||MEMBERS[r.name]||'?',amount:0,yusun:0,musun:0,rental:0};
+    byP[r.name].amount+=r.amount||0;
+    byP[r.name].yusun+=r.yusun||0;
+    byP[r.name].musun+=r.musun||0;
+    byP[r.name].rental+=r.rental||0;
+  });
+  const sortedP=Object.values(byP).sort((a,b)=>b.amount-a.amount);
+  const ANNUAL_GOAL=GOAL*12;
+  const rIcons=['🥇','🥈','🥉'];const rCls=['r1','r2','r3'];
+  document.getElementById('cumul-rank-body').innerHTML=sortedP.map((p,i)=>{
+    const cnt=p.yusun+p.musun+p.rental;
+    const avg=cnt>0?Math.round(p.amount/cnt):0;
+    const rate=p.amount/ANNUAL_GOAL*100;
+    const rc=rate>=100?'var(--gold)':rate>=50?'var(--green2)':'var(--text2)';
+    const monthsActive=[...new Set(allData.filter(r=>r.name===p.name&&r.amount>0).map(r=>r.month))].length||1;
+    return`<tr>
+      <td class="rank-num ${rCls[i]||''}">${rIcons[i]||i+1+'위'}</td>
+      <td><span class="team-tag ${p.team==='1팀'?'t1':'t2'}">${p.team}</span></td>
+      <td style="font-weight:600">${p.name}</td>
+      <td class="num-cell gold-num">${fmt(p.amount)}</td>
+      <td class="num-cell">${fmt(Math.round(p.amount/monthsActive))}</td>
+      <td class="num-cell">${cnt}건</td>
+      <td class="num-cell">${avg?fmt(avg):'-'}</td>
+      <td><span style="color:${rc};font-weight:700;font-size:12px">${rate.toFixed(1)}%</span>
+        <span class="progress"><span class="progress-fill" style="width:${Math.min(rate,100)}%;background:${rc}"></span></span></td>
+    </tr>`;
+  }).join('');
+
+  // 월별 팀 추이 차트
+  if(charts.cumulMonthly) charts.cumulMonthly.destroy();
+  charts.cumulMonthly=new Chart(document.getElementById('cumul-monthly-chart'),{
+    type:'bar',
+    data:{
+      labels:MONTH_LABELS,
+      datasets:[
+        {label:'1팀',data:MONTH_LABELS.map((_,i)=>byMonth[i+1].t1),backgroundColor:'#1565C0',borderRadius:3},
+        {label:'2팀',data:MONTH_LABELS.map((_,i)=>byMonth[i+1].t2),backgroundColor:'#2E7D32',borderRadius:3},
+      ]
+    },
+    options:{responsive:true,maintainAspectRatio:false,
+      plugins:{legend:{position:'top',labels:{color:'#90A4AE',font:{size:10}}}},
+      scales:{
+        x:{ticks:{color:'#546E7A',font:{size:10}},stacked:false},
+        y:{ticks:{color:'#546E7A',font:{size:9},callback:v=>fmt(v)},grid:{color:'rgba(255,255,255,0.04)'}}
+      }
+    }
+  });
+
+  // 개인별 누적 차트
+  if(charts.cumulPerson) charts.cumulPerson.destroy();
+  charts.cumulPerson=new Chart(document.getElementById('cumul-person-chart'),{
+    type:'bar',
+    data:{
+      labels:sortedP.map(p=>p.name),
+      datasets:[{data:sortedP.map(p=>p.amount),backgroundColor:sortedP.map(p=>p.team==='1팀'?'#1565C0':'#2E7D32'),borderRadius:3}]
+    },
+    options:{responsive:true,maintainAspectRatio:false,
+      plugins:{legend:{display:false}},
+      scales:{
+        x:{ticks:{color:'#90A4AE',font:{size:9}}},
+        y:{ticks:{color:'#546E7A',font:{size:9},callback:v=>fmt(v)},grid:{color:'rgba(255,255,255,0.04)'}}
+      }
+    }
+  });
+}
+
+/* ── 대시보드 ── */
+function renderDash(){
+  const data=filtered();
+  const y=document.getElementById('sel-year').value;
+  const m=+document.getElementById('sel-month').value;
+  document.getElementById('dash-title').textContent=`${y}년 ${m===0?'전체':m+'월'} 대시보드`;
+  document.getElementById('dash-sub').textContent=`총 ${data.length}건 입력됨`;
+
+  const byP={};
+  data.forEach(r=>{
+    if(!byP[r.name])byP[r.name]={name:r.name,team:r.team||MEMBERS[r.name]||'?',amount:0,yusun:0,musun:0};
+    byP[r.name].amount+=r.amount||0;
+    byP[r.name].yusun+=r.yusun||0;
+    byP[r.name].musun+=r.musun||0;
+  });
+  const persons=Object.values(byP);
+  const total=persons.reduce((s,p)=>s+p.amount,0);
+  const t1=persons.filter(p=>p.team==='1팀').reduce((s,p)=>s+p.amount,0);
+  const t2=persons.filter(p=>p.team==='2팀').reduce((s,p)=>s+p.amount,0);
+  const cnt=data.reduce((s,r)=>s+(r.yusun||0)+(r.musun||0)+(r.rental||0),0);
+
+  document.getElementById('kpi-grid').innerHTML=`
+    <div class="kpi-card"><div class="kpi-label">전체 매출</div><div class="kpi-value gold">${fmt(total)}원</div><div class="kpi-sub">${data.length}건 입력</div></div>
+    <div class="kpi-card"><div class="kpi-label">1팀 매출</div><div class="kpi-value blue">${fmt(t1)}원</div><div class="kpi-bar"><div class="kpi-bar-fill" style="width:${total?t1/total*100:0}%;background:var(--blue2)"></div></div></div>
+    <div class="kpi-card"><div class="kpi-label">2팀 매출</div><div class="kpi-value green">${fmt(t2)}원</div><div class="kpi-bar"><div class="kpi-bar-fill" style="width:${total?t2/total*100:0}%;background:var(--green2)"></div></div></div>
+    <div class="kpi-card"><div class="kpi-label">총 접수건</div><div class="kpi-value">${cnt}건</div><div class="kpi-sub">유선+무선</div></div>`;
+
+  // Top5
+  const sorted=[...persons].sort((a,b)=>b.amount-a.amount).slice(0,5);
+  const rIcons=['🥇','🥈','🥉'];const rCls=['r1','r2','r3'];
+  document.getElementById('top5-body').innerHTML=sorted.map((p,i)=>`
+    <tr><td class="rank-num ${rCls[i]||''}">${rIcons[i]||i+1+'위'}</td>
+    <td style="font-weight:600">${p.name}</td>
+    <td><span class="team-tag ${p.team==='1팀'?'t1':'t2'}">${p.team}</span></td>
+    <td class="num-cell gold-num">${fmt(p.amount)}</td></tr>`).join('');
+
+  // 팀별 도넛
+  if(charts.team)charts.team.destroy();
+  charts.team=new Chart(document.getElementById('team-chart'),{
+    type:'doughnut',
+    data:{labels:['1팀','2팀'],datasets:[{data:[t1,t2],backgroundColor:['#1565C0','#2E7D32'],borderWidth:0}]},
+    options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{position:'bottom',labels:{color:'#90A4AE',font:{size:11}}}}}
+  });
+
+  // 일별 숫자 테이블
+  const byDay={};
+  data.forEach(r=>{
+    const k=`${r.year}-${String(r.month).padStart(2,'0')}-${String(r.day).padStart(2,'0')}`;
+    if(!byDay[k])byDay[k]={lbl:`${r.month}/${r.day}`,total:0,t1:0,t2:0,cnt:0};
+    byDay[k].total+=r.amount||0;
+    if((r.team||MEMBERS[r.name])==='1팀')byDay[k].t1+=r.amount||0;
+    else byDay[k].t2+=r.amount||0;
+    byDay[k].cnt+=(r.yusun||0)+(r.musun||0);
+  });
+  const days=Object.keys(byDay).sort();
+  const gTotal=days.reduce((s,k)=>s+byDay[k].total,0);
+  document.getElementById('daily-body').innerHTML=
+    days.length===0?'<tr><td colspan="5" style="text-align:center;padding:20px;color:var(--text3)">데이터 없음</td></tr>':
+    days.map(k=>{const d=byDay[k];const pct=gTotal?Math.round(d.total/gTotal*100):0;
+      return`<tr>
+        <td style="font-weight:600;color:var(--text2)">${d.lbl}</td>
+        <td class="num-cell gold-num">${fmt(d.total)}<span style="font-size:10px;color:var(--text3);margin-left:6px">${pct}%</span></td>
+        <td class="num-cell" style="color:var(--blue2)">${fmt(d.t1)}</td>
+        <td class="num-cell" style="color:var(--green2)">${fmt(d.t2)}</td>
+        <td class="num-cell">${d.cnt}건</td></tr>`;
+    }).join('')
+    +`<tr style="border-top:2px solid var(--border2)">
+        <td style="font-weight:700;color:var(--gold)">합계</td>
+        <td class="num-cell gold-num" style="font-weight:700">${fmt(gTotal)}</td>
+        <td class="num-cell" style="color:var(--blue2);font-weight:700">${fmt(days.reduce((s,k)=>s+byDay[k].t1,0))}</td>
+        <td class="num-cell" style="color:var(--green2);font-weight:700">${fmt(days.reduce((s,k)=>s+byDay[k].t2,0))}</td>
+        <td class="num-cell" style="font-weight:700">${days.reduce((s,k)=>s+byDay[k].cnt,0)}건</td>
+      </tr>`;
+}
+
+/* ── 순위 ── */
+function renderRank(){
+  const data=filtered();
+  const y=document.getElementById('sel-year').value;
+  const m=+document.getElementById('sel-month').value;
+  document.getElementById('rank-sub').textContent=`${y}년 ${m===0?'전체':m+'월'} 기준`;
+  const byP={};
+  data.forEach(r=>{
+    if(!byP[r.name])byP[r.name]={name:r.name,team:r.team||MEMBERS[r.name]||'?',amount:0,yusun:0,musun:0};
+    byP[r.name].amount+=r.amount||0;
+    byP[r.name].yusun+=r.yusun||0;
+    byP[r.name].musun+=r.musun||0;
+  });
+  const sorted=Object.values(byP).sort((a,b)=>b.amount-a.amount);
+  const rIcons=['🥇','🥈','🥉'];const rCls=['r1','r2','r3'];
+  document.getElementById('rank-body').innerHTML=sorted.map((p,i)=>{
+    const cnt=p.yusun+p.musun;
+    const avg=cnt>0?Math.round(p.amount/cnt):0;
+    const rate=p.amount/GOAL*100;
+    const rc=rate>=100?'var(--gold)':rate>=70?'var(--green2)':'var(--red2)';
+    return`<tr>
+      <td class="rank-num ${rCls[i]||''}">${rIcons[i]||i+1+'위'}</td>
+      <td><span class="team-tag ${p.team==='1팀'?'t1':'t2'}">${p.team}</span></td>
+      <td style="font-weight:600">${p.name}</td>
+      <td class="num-cell gold-num">${fmt(p.amount)}</td>
+      <td class="num-cell">${cnt}</td>
+      <td class="num-cell">${fmt(avg)}</td>
+      <td><span style="color:${rc};font-weight:700;font-size:12px">${rate.toFixed(1)}%</span>
+        <span class="progress"><span class="progress-fill" style="width:${Math.min(rate,100)}%;background:${rc}"></span></span></td>
+    </tr>`;
+  }).join('');
+  if(charts.rank)charts.rank.destroy();
+  charts.rank=new Chart(document.getElementById('rank-chart'),{
+    type:'bar',
+    data:{labels:sorted.map(p=>p.name),datasets:[{data:sorted.map(p=>p.amount),backgroundColor:sorted.map(p=>p.team==='1팀'?'#1565C0':'#2E7D32'),borderRadius:4}]},
+    options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},scales:{x:{ticks:{color:'#90A4AE',font:{size:10}}},y:{ticks:{color:'#90A4AE',font:{size:10},callback:v=>fmt(v)}}}}
+  });
+}
+
+/* ── 이력 ── */
+function renderHistory(){
+  const data=getData().slice().reverse();
+  if(!data.length){document.getElementById('history-body').innerHTML='<tr><td colspan="7" style="text-align:center;padding:24px;color:var(--text3)">저장된 이력이 없습니다</td></tr>';return}
+  document.getElementById('history-body').innerHTML=data.map((r,i)=>`
+    <tr>
+      <td style="color:var(--text2);font-size:11px">${r.year}년 ${r.month}월 ${r.day}일</td>
+      <td><span class="team-tag ${(r.team||'?')==='1팀'?'t1':'t2'}">${r.team||'?'}</span></td>
+      <td style="font-weight:600">${r.name}</td>
+      <td class="num-cell gold-num">${fmt(r.amount)}</td>
+      <td class="num-cell">${r.yusun||0}</td>
+      <td class="num-cell">${r.musun||0}</td>
+      <td class="num-cell">${r.rental||0}</td>
+      <td><button class="btn btn-ghost" style="padding:4px 8px;font-size:10px" onclick="deleteRow(${data.length-1-i})">삭제</button></td>
+    </tr>`).join('');
+}
+function deleteRow(i){const d=getData();d.splice(i,1);setData(d);renderHistory();toast('삭제됐습니다')}
+function clearAll(){setData([]);renderHistory();toast('전체 삭제됐습니다')}
+
+/* ── 입력 탭 전환 ── */
+function switchInputTab(tab){
+  const isManual = tab === 'manual';
+  document.getElementById('manual-area').style.display = isManual ? 'block' : 'none';
+  document.getElementById('ai-area').style.display     = isManual ? 'none'  : 'block';
+  const tM = document.getElementById('tab-manual');
+  const tA = document.getElementById('tab-ai');
+  tM.style.background = isManual ? 'var(--gold)' : 'transparent';
+  tM.style.color      = isManual ? '#000' : 'var(--text2)';
+  tA.style.background = isManual ? 'transparent' : 'var(--gold)';
+  tA.style.color      = isManual ? 'var(--text2)' : '#000';
+  if(isManual) renderManualTable();
+}
+
+/* ── 수동 입력 테이블 렌더 ── */
+const ALL_MEMBERS = [
+  {name:"김시원 과장",team:"1팀"},{name:"현보영 주임",team:"1팀"},
+  {name:"임제엽 주임",team:"1팀"},{name:"박광윤 주임",team:"1팀"},
+  {name:"이민철 사원",team:"1팀"},{name:"양지애 과장",team:"2팀"},
+  {name:"최성훈 사원",team:"2팀"},{name:"이경구 사원",team:"2팀"},
+  {name:"이건호 사원",team:"2팀"},
+];
+
+function renderManualTable(){
+  const y = +document.getElementById('in-year').value;
+  const m = +document.getElementById('in-month').value;
+  const d = +document.getElementById('in-day').value;
+  document.getElementById('manual-date-lbl').textContent = `${y}년 ${m}월 ${d}일`;
+
+  const existing = getData();
+  document.getElementById('manual-tbody').innerHTML = ALL_MEMBERS.map((mem, i) => {
+    const saved = existing.find(r => r.year===y && r.month===m && r.day===d && r.name===mem.name);
+    const amt = saved ? saved.amount : 0;
+    const yu  = saved ? saved.yusun  : 0;
+    const mu  = saved ? saved.musun  : 0;
+    const re  = saved ? saved.rental : 0;
+    return `<tr>
+      <td><span class="team-tag ${mem.team==='1팀'?'t1':'t2'}">${mem.team}</span></td>
+      <td style="font-weight:600;min-width:90px">${mem.name}</td>
+      <td style="text-align:center"><input class="edit-num" id="amt-${i}" value="${amt ? amt.toLocaleString() : ''}" placeholder="0" oninput="fmtInput(this)" style="width:100%"></td>
+      <td style="text-align:center"><input class="edit-num" id="yu-${i}"  value="${yu||''}" placeholder="0" type="number" min="0" style="width:100%"></td>
+      <td style="text-align:center"><input class="edit-num" id="mu-${i}"  value="${mu||''}" placeholder="0" type="number" min="0" style="width:100%"></td>
+      <td style="text-align:center"><input class="edit-num" id="re-${i}"  value="${re||''}" placeholder="0" type="number" min="0" style="width:100%"></td>
+    </tr>`;
+  }).join('');
+}
+
+function fmtInput(el){
+  const raw = el.value.replace(/,/g,'').replace(/[^0-9]/g,'');
+  if(raw===''){el.value='';return}
+  el.value = parseInt(raw).toLocaleString('ko-KR');
+}
+
+function resetManual(){
+  document.querySelectorAll('#manual-tbody input').forEach(el=>{el.value='';});
+  toast('초기화됐습니다');
+}
+
+function saveManual(){
+  const y = +document.getElementById('in-year').value;
+  const m = +document.getElementById('in-month').value;
+  const d = +document.getElementById('in-day').value;
+  const existing = getData();
+  let savedCount = 0;
+
+  ALL_MEMBERS.forEach((mem, i) => {
+    const amtRaw = document.getElementById('amt-'+i).value.replace(/,/g,'');
+    const amt = parseInt(amtRaw) || 0;
+    const yu  = parseInt(document.getElementById('yu-'+i).value)  || 0;
+    const mu  = parseInt(document.getElementById('mu-'+i).value)  || 0;
+    const re  = parseInt(document.getElementById('re-'+i).value)  || 0;
+
+    if(amt===0 && yu===0 && mu===0 && re===0) return;
+
+    const idx = existing.findIndex(r => r.year===y && r.month===m && r.day===d && r.name===mem.name);
+    const row = {year:y, month:m, day:d, name:mem.name, team:mem.team, amount:amt, yusun:yu, musun:mu, rental:re};
+    if(idx >= 0) existing[idx] = row; else existing.push(row);
+    savedCount++;
+  });
+
+  if(savedCount === 0){ toast('입력된 값이 없습니다','err'); return; }
+  setData(existing);
+  toast(`${m}월 ${d}일 실적 저장 완료 (${savedCount}명)`,'ok');
+  renderDash();
+}
+
+
+function updateDays(){
+  const y=+document.getElementById('in-year').value;
+  const m=+document.getElementById('in-month').value;
+  const days=new Date(y,m,0).getDate();
+  const sel=document.getElementById('in-day');
+  const cur=+sel.value||new Date().getDate();
+  sel.innerHTML='';
+  for(let d=1;d<=days;d++){const o=document.createElement('option');o.value=d;o.textContent=d+'일';if(d===Math.min(cur,days))o.selected=true;sel.appendChild(o);}
+  if(document.getElementById('manual-area').style.display!=='none') renderManualTable();
+}
+updateDays();
+document.getElementById('in-year').addEventListener('change',updateDays);
+document.getElementById('in-day').addEventListener('change',()=>{
+  if(document.getElementById('manual-area').style.display!=='none') renderManualTable();
+});
+
+const zone=document.getElementById('upload-area');
+zone.addEventListener('dragover',e=>{e.preventDefault();zone.classList.add('drag')});
+zone.addEventListener('dragleave',()=>zone.classList.remove('drag'));
+zone.addEventListener('drop',e=>{e.preventDefault();zone.classList.remove('drag');if(e.dataTransfer.files[0])handleFile(e.dataTransfer.files[0])});
+
+function handleFile(file){
+  if(!file||!file.type.startsWith('image/')){toast('이미지 파일만 가능합니다','err');return}
+  fileType=file.type;
+  const reader=new FileReader();
+  reader.onload=e=>{
+    b64=e.target.result.split(',')[1];
+    document.getElementById('preview-img').src=e.target.result;
+    document.getElementById('preview-area').style.display='block';
+    document.getElementById('upload-area').style.display='none';
+    document.getElementById('analyze-btn').disabled=false;
+  };
+  reader.readAsDataURL(file);
+}
+
+function resetUpload(){
+  b64=null;fileType=null;parsed=[];
+  document.getElementById('preview-area').style.display='none';
+  document.getElementById('upload-area').style.display='block';
+  document.getElementById('file-input').value='';
+  document.getElementById('analyze-btn').disabled=true;
+  document.getElementById('result-area').style.display='none';
+}
+
+/* ── AI 분석 (서버 경유 - API 키 불필요) ── */
+async function analyze(){
+  if(!b64)return;
+
+  const btn=document.getElementById('analyze-btn');
+  const sp=document.getElementById('analyze-spin');
+  const atxt=document.getElementById('analyze-txt');
+  btn.disabled=true;sp.style.display='block';atxt.textContent='AI 분석 중...';
+
+  try{
+    const res=await fetch('/api/analyze',{
+      method:'POST',
+      headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({image:b64, mediaType:fileType})
+    });
+    const d=await res.json();
+    if(!d.success) throw new Error(d.error||'서버 오류');
+    parsed=d.data;
+    showResult();
+  }catch(e){
+    toast('인식 실패: '+e.message,'err');
+  }
+  finally{btn.disabled=false;sp.style.display='none';atxt.textContent='🤖 AI로 데이터 자동 인식'}
+}
+
+function showResult(){
+  const y=document.getElementById('in-year').value;
+  const m=document.getElementById('in-month').value;
+  const d=document.getElementById('in-day').value;
+  document.getElementById('result-date-lbl').textContent=`${y}년 ${m}월 ${d}일`;
+  document.getElementById('result-cnt').textContent=parsed.length+'명 인식';
+  document.getElementById('result-tbody').innerHTML=parsed.map((r,i)=>{
+    const team=r.team||MEMBERS[r.name]||'?';
+    return`<tr>
+      <td><span class="team-tag ${team==='1팀'?'t1':'t2'}">${team}</span></td>
+      <td style="font-weight:600">${r.name}</td>
+      <td><input class="edit-num" data-i="${i}" data-f="amount" value="${(r.amount||0).toLocaleString()}" onchange="upd(this)"></td>
+      <td><input class="edit-num" data-i="${i}" data-f="yusun"  value="${r.yusun||0}"  style="width:55px" onchange="upd(this)"></td>
+      <td><input class="edit-num" data-i="${i}" data-f="musun"  value="${r.musun||0}"  style="width:55px" onchange="upd(this)"></td>
+      <td><input class="edit-num" data-i="${i}" data-f="rental" value="${r.rental||0}" style="width:55px" onchange="upd(this)"></td>
+    </tr>`;
+  }).join('');
+  document.getElementById('result-area').style.display='block';
+}
+
+function upd(el){
+  const i=+el.dataset.i,f=el.dataset.f;
+  const v=parseInt(el.value.replace(/,/g,''))||0;
+  parsed[i][f]=v;
+  if(f==='amount')el.value=v.toLocaleString();
+}
+
+function saveData(){
+  const y=+document.getElementById('in-year').value;
+  const m=+document.getElementById('in-month').value;
+  const d=+document.getElementById('in-day').value;
+  const existing=getData();
+  parsed.forEach(r=>{
+    const team=r.team||MEMBERS[r.name]||'?';
+    const idx=existing.findIndex(e=>e.year===y&&e.month===m&&e.day===d&&e.name===r.name);
+    const row={year:y,month:m,day:d,name:r.name,team,amount:r.amount||0,yusun:r.yusun||0,musun:r.musun||0,rental:r.rental||0};
+    if(idx>=0)existing[idx]=row;else existing.push(row);
+  });
+  setData(existing);
+  toast(`${m}월 ${d}일 실적 저장 완료 (${parsed.length}명)`,'ok');
+  resetUpload();
+  renderDash();
+}
+
+function toast(msg,type=''){
+  const el=document.getElementById('toast');
+  el.textContent=msg;el.className='toast show '+(type==='ok'?'ok':type==='err'?'err':'');
+  setTimeout(()=>el.className='toast',2800);
+}
+
+/* ── 초기 데이터 시드 ── */
+(function seed(){
+  if(getData().length)return;
+  const rows=[
+    {year:2026,month:5,day:26,name:"김시원 과장",team:"1팀",amount:138182,yusun:1,musun:0},
+    {year:2026,month:5,day:26,name:"현보영 주임",team:"1팀",amount:440000,yusun:1,musun:0},
+    {year:2026,month:5,day:26,name:"임제엽 주임",team:"1팀",amount:110000,yusun:1,musun:0},
+    {year:2026,month:5,day:26,name:"박광윤 주임",team:"1팀",amount:160000,yusun:1,musun:0},
+    {year:2026,month:5,day:26,name:"이민철 사원",team:"1팀",amount:865456,yusun:5,musun:2},
+    {year:2026,month:5,day:26,name:"양지애 과장",team:"2팀",amount:300000,yusun:2,musun:1},
+    {year:2026,month:5,day:26,name:"최성훈 사원",team:"2팀",amount:2000000,yusun:7,musun:3},
+    {year:2026,month:5,day:26,name:"이경구 사원",team:"2팀",amount:0,yusun:0,musun:0},
+    {year:2026,month:5,day:26,name:"이건호 사원",team:"2팀",amount:170000,yusun:2,musun:0},
+    {year:2026,month:5,day:27,name:"김시원 과장",team:"1팀",amount:279999,yusun:2,musun:0},
+    {year:2026,month:5,day:27,name:"현보영 주임",team:"1팀",amount:240000,yusun:1,musun:0},
+    {year:2026,month:5,day:27,name:"임제엽 주임",team:"1팀",amount:100000,yusun:1,musun:0},
+    {year:2026,month:5,day:27,name:"박광윤 주임",team:"1팀",amount:0,yusun:0,musun:0},
+    {year:2026,month:5,day:27,name:"이민철 사원",team:"1팀",amount:160000,yusun:1,musun:0},
+    {year:2026,month:5,day:27,name:"양지애 과장",team:"2팀",amount:250000,yusun:3,musun:0},
+    {year:2026,month:5,day:27,name:"최성훈 사원",team:"2팀",amount:1520000,yusun:5,musun:0},
+    {year:2026,month:5,day:27,name:"이경구 사원",team:"2팀",amount:250000,yusun:2,musun:0},
+    {year:2026,month:5,day:27,name:"이건호 사원",team:"2팀",amount:220000,yusun:2,musun:0},
+    {year:2026,month:5,day:28,name:"김시원 과장",team:"1팀",amount:729091,yusun:3,musun:2},
+    {year:2026,month:5,day:28,name:"현보영 주임",team:"1팀",amount:560000,yusun:2,musun:0},
+    {year:2026,month:5,day:28,name:"임제엽 주임",team:"1팀",amount:0,yusun:0,musun:0},
+    {year:2026,month:5,day:28,name:"박광윤 주임",team:"1팀",amount:170000,yusun:1,musun:0},
+    {year:2026,month:5,day:28,name:"이민철 사원",team:"1팀",amount:530908,yusun:4,musun:0},
+    {year:2026,month:5,day:28,name:"양지애 과장",team:"2팀",amount:0,yusun:0,musun:0},
+    {year:2026,month:5,day:28,name:"최성훈 사원",team:"2팀",amount:2080000,yusun:8,musun:2},
+    {year:2026,month:5,day:28,name:"이경구 사원",team:"2팀",amount:336000,yusun:1,musun:1},
+    {year:2026,month:5,day:28,name:"이건호 사원",team:"2팀",amount:60000,yusun:1,musun:0},
+    {year:2026,month:5,day:29,name:"김시원 과장",team:"1팀",amount:180000,yusun:2,musun:0},
+    {year:2026,month:5,day:29,name:"현보영 주임",team:"1팀",amount:110000,yusun:0,musun:0},
+    {year:2026,month:5,day:29,name:"임제엽 주임",team:"1팀",amount:112727,yusun:1,musun:0},
+    {year:2026,month:5,day:29,name:"박광윤 주임",team:"1팀",amount:300000,yusun:1,musun:1},
+    {year:2026,month:5,day:29,name:"이민철 사원",team:"1팀",amount:830908,yusun:4,musun:2},
+    {year:2026,month:5,day:29,name:"양지애 과장",team:"2팀",amount:220000,yusun:1,musun:1},
+    {year:2026,month:5,day:29,name:"최성훈 사원",team:"2팀",amount:880000,yusun:5,musun:0},
+    {year:2026,month:5,day:29,name:"이경구 사원",team:"2팀",amount:0,yusun:0,musun:0},
+    {year:2026,month:5,day:29,name:"이건호 사원",team:"2팀",amount:0,yusun:0,musun:0},
+  ];
+  setData(rows);
+})();
+
+updateApiStatus();
+renderDash();
+renderManualTable();
+</script>
+</body>
+</html>
